@@ -1,0 +1,109 @@
+<svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5c6773"/>
+    </marker>
+    <linearGradient id="vpcFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef4fb"/>
+      <stop offset="1" stop-color="#e2edf9"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="620" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1b2733">Per-Developer AWS Environment — Terraform Architecture</text>
+
+  <!-- Internet -->
+  <g>
+    <circle cx="80" cy="110" r="34" fill="#f2f5f8" stroke="#8a97a6" stroke-width="1.5"/>
+    <text x="80" y="105" text-anchor="middle" font-size="12" font-weight="600" fill="#2c3a49">Internet</text>
+    <text x="80" y="120" text-anchor="middle" font-size="10" fill="#5c6773">(your IP only)</text>
+  </g>
+
+  <!-- AWS Cloud boundary -->
+  <rect x="170" y="60" width="760" height="330" rx="14" fill="#fbf8f1" stroke="#e08e2b" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="188" y="82" font-size="12" font-weight="700" fill="#c07a13">AWS Cloud (region: var.aws_region)</text>
+
+  <!-- VPC boundary -->
+  <rect x="200" y="100" width="700" height="270" rx="12" fill="url(#vpcFill)" stroke="#3f7fb8" stroke-width="1.5"/>
+  <text x="216" y="122" font-size="12" font-weight="700" fill="#245583">aws_vpc.dev-env — var.vpc_cidr (10.0.0.0/16)</text>
+
+  <!-- IGW -->
+  <rect x="228" y="140" width="140" height="46" rx="8" fill="#ffffff" stroke="#3f7fb8" stroke-width="1.3"/>
+  <text x="298" y="160" text-anchor="middle" font-size="11" font-weight="600" fill="#1b2733">Internet Gateway</text>
+  <text x="298" y="174" text-anchor="middle" font-size="9.5" fill="#5c6773">dev-env-igw</text>
+
+  <!-- Route table -->
+  <rect x="228" y="200" width="140" height="46" rx="8" fill="#ffffff" stroke="#3f7fb8" stroke-width="1.3"/>
+  <text x="298" y="220" text-anchor="middle" font-size="11" font-weight="600" fill="#1b2733">Route Table</text>
+  <text x="298" y="234" text-anchor="middle" font-size="9.5" fill="#5c6773">0.0.0.0/0 → IGW</text>
+
+  <!-- Public subnet -->
+  <rect x="420" y="140" width="440" height="200" rx="12" fill="#ffffff" stroke="#3f7fb8" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <text x="436" y="162" font-size="11.5" font-weight="700" fill="#245583">Public Subnet — var.public_subnet_cidr (10.0.1.0/24)</text>
+
+  <!-- Security Group -->
+  <rect x="440" y="178" width="400" height="140" rx="10" fill="#fdecec" stroke="#c85454" stroke-width="1.3"/>
+  <text x="640" y="197" text-anchor="middle" font-size="11" font-weight="700" fill="#a13636">aws_security_group.dev-env-sg</text>
+  <text x="640" y="213" text-anchor="middle" font-size="9.5" fill="#7a3030">ingress 22/tcp  ←  var.my_ip</text>
+  <text x="640" y="227" text-anchor="middle" font-size="9.5" fill="#7a3030">ingress var.app_port (5000)/tcp  ←  var.my_ip</text>
+  <text x="640" y="241" text-anchor="middle" font-size="9.5" fill="#7a3030">egress  all  →  0.0.0.0/0</text>
+
+  <!-- EC2 instance -->
+  <rect x="470" y="252" width="340" height="56" rx="8" fill="#fff4e6" stroke="#e08e2b" stroke-width="1.4"/>
+  <text x="640" y="272" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8a5410">aws_instance.dev_env_test</text>
+  <text x="640" y="287" text-anchor="middle" font-size="9.5" fill="#6b4a17">Amazon Linux 2023 · t3.micro/t2.micro · Flask app :5000</text>
+  <text x="640" y="300" text-anchor="middle" font-size="9" fill="#8a6a30">provisioned via file + remote-exec</text>
+
+  <!-- Key pair / local file -->
+  <rect x="620" y="345" width="180" height="40" rx="8" fill="#ffffff" stroke="#7a8a9a" stroke-width="1.2"/>
+  <text x="710" y="364" text-anchor="middle" font-size="10" font-weight="600" fill="#1b2733">tls_private_key + aws_key_pair</text>
+  <text x="710" y="377" text-anchor="middle" font-size="8.8" fill="#5c6773">→ local_file dev-env-key.pem</text>
+
+  <!-- Arrows: internet -> igw -->
+  <path d="M114,110 L228,163" stroke="#5c6773" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <!-- igw -> route table -->
+  <path d="M298,186 L298,200" stroke="#5c6773" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <!-- route table -> subnet -->
+  <path d="M368,223 L420,223" stroke="#5c6773" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <!-- sg -> instance implied by nesting; key pair -> instance -->
+  <path d="M710,345 L710,308" stroke="#5c6773" stroke-width="1.3" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Remote backend box (outside VPC, inside AWS) -->
+  <rect x="200" y="392" width="700" height="80" rx="12" fill="#eef7ee" stroke="#5a9a5a" stroke-width="1.4"/>
+  <text x="216" y="414" font-size="12" font-weight="700" fill="#2e6b2e">Remote Terraform State (backend.tf)</text>
+  <rect x="224" y="424" width="220" height="38" rx="8" fill="#ffffff" stroke="#5a9a5a" stroke-width="1.1"/>
+  <text x="334" y="442" text-anchor="middle" font-size="10" font-weight="600" fill="#1b2733">S3 bucket</text>
+  <text x="334" y="455" text-anchor="middle" font-size="8.8" fill="#4a5a4a">terraform-dev-environments-test</text>
+  <rect x="460" y="424" width="220" height="38" rx="8" fill="#ffffff" stroke="#5a9a5a" stroke-width="1.1"/>
+  <text x="570" y="442" text-anchor="middle" font-size="10" font-weight="600" fill="#1b2733">DynamoDB table</text>
+  <text x="570" y="455" text-anchor="middle" font-size="8.8" fill="#4a5a4a">terraform-locks (state locking)</text>
+  <path d="M444,443 L460,443" stroke="#5a9a5a" stroke-width="1.3" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Developer machine -->
+  <g>
+    <rect x="20" y="480" width="200" height="70" rx="10" fill="#ffffff" stroke="#8a97a6" stroke-width="1.3"/>
+    <text x="120" y="503" text-anchor="middle" font-size="11" font-weight="700" fill="#1b2733">Developer</text>
+    <text x="120" y="518" text-anchor="middle" font-size="9.2" fill="#5c6773">terraform apply</text>
+    <text x="120" y="531" text-anchor="middle" font-size="9.2" fill="#5c6773">-var developer_name=&lt;name&gt;</text>
+  </g>
+  <path d="M120,480 L120,432 L200,432" stroke="#5a9a5a" stroke-width="1.3" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <g font-size="9.5" fill="#5c6773">
+    <rect x="240" y="490" width="12" height="12" fill="#eef4fb" stroke="#3f7fb8"/>
+    <text x="258" y="500">Networking (VPC / Subnet / Routing)</text>
+    <rect x="240" y="510" width="12" height="12" fill="#fdecec" stroke="#c85454"/>
+    <text x="258" y="520">Security Group (locked to your IP)</text>
+    <rect x="240" y="530" width="12" height="12" fill="#fff4e6" stroke="#e08e2b"/>
+    <text x="258" y="540">Compute (EC2 + Flask app)</text>
+
+    <rect x="560" y="490" width="12" height="12" fill="#eef7ee" stroke="#5a9a5a"/>
+    <text x="578" y="500">Remote state (S3 + DynamoDB lock)</text>
+    <rect x="560" y="510" width="12" height="12" fill="#ffffff" stroke="#7a8a9a"/>
+    <text x="578" y="520">Generated SSH key material</text>
+  </g>
+
+  <text x="500" y="600" text-anchor="middle" font-size="10.5" fill="#8a97a6">Each developer runs terraform apply with a unique developer_name → isolated, tagged, disposable environment</text>
+</svg>
