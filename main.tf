@@ -34,7 +34,7 @@ resource "aws_route_table" "public" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.dev-env.id
+    gateway_id = aws_internet_gateway.dev-env-igw.id
   }
 
   tags = {
@@ -88,13 +88,32 @@ resource "aws_security_group" "dev-env-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-resource "aws_instance" "server" {
-  ami                    = "ami-0b6d9d3d33ba97d99"
-  instance_type          = "t2.micro"
-  key_name      = aws_key_pair.example.key_name
-  vpc_security_group_ids = [aws_security_group.webSg.id]
-  subnet_id              = aws_subnet.sub1.id
- connection {
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+}
+
+resource "aws_instance" "dev_env_test" {
+  ami                          = data.aws_ami.amazon_linux.id
+  instance_type                = "t3.micro"
+  key_name                     = aws_key_pair.this.key_name
+  vpc_security_group_ids       = [aws_security_group.dev-env-sg.id]
+  subnet_id                    = aws_subnet.public.id
+  associate_public_ip_address  = true
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 8
+  }
+
+  depends_on = [aws_route_table_association.public]
+
+  connection {
     type        = "ssh"
     user        = "ec2-user"
     private_key = tls_private_key.this.private_key_pem
@@ -106,11 +125,15 @@ resource "aws_instance" "server" {
     destination = "/home/ec2-user/app.py"
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo dnf install -y python3 python3-pip",
-      "sudo pip3 install flask",
-      "nohup python3 /home/ec2-user/app.py &"
-    ]
-  }
+provisioner "remote-exec" {
+  inline = [
+    "sudo dnf install -y python3 python3-pip",
+    "python3 -m pip install flask",
+    "cd /home/ec2-user",
+    "nohup python3 app.py > /home/ec2-user/app.log 2>&1 < /dev/null &",
+    "sleep 5",
+    "cat /home/ec2-user/app.log",
+    "ps -ef | grep app.py | grep -v grep || true"
+  ]
+}
 }
