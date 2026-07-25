@@ -200,7 +200,3 @@ Default sizing (`t2.micro`/`t3.micro`, 8 GB gp3 volume) fits within the AWS Free
 - Add an Elastic IP option so the address survives instance replacement
 - Support HTTPS via an Application Load Balancer + ACM certificate
 - Add a `Makefile` or `justfile` to wrap common `plan`/`apply`/`destroy` invocations
-
-## License
-
-No license file is currently included in this repository. Add one (e.g. MIT, Apache-2.0) if you intend for others to reuse this code.
